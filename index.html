@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>jQuery Master Class | Interactive Editor</title>
+    
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <style>
+        :root {
+            --primary: #3b82f6; /* Bright Blue */
+            --accent: #8b5cf6; /* Violet */
+            --bg-dark: #0f172a; /* Slate 900 */
+            --bg-card: #1e293b; /* Slate 800 */
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+            --glass-bg: rgba(30, 41, 59, 0.7);
+            --code-bg: #0d1117;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            padding-bottom: 60px;
+        }
+
+        /* --- Header --- */
+        header {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            padding: 20px 0;
+        }
+
+        .search-wrapper {
+            position: relative;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 12px 20px 12px 45px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-card);
+            color: white;
+            font-size: 1rem;
+            transition: 0.2s;
+        }
+
+        .search-input:focus {
+            background: var(--bg-card);
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+            color: white;
+        }
+        
+        .search-input::placeholder { color: var(--text-muted); }
+
+        /* --- Cards --- */
+        .cat-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin: 40px 0 20px;
+            display: flex;
+            align-items: center;
+            color: var(--text-main);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+        
+        .cat-badge {
+            background: rgba(59, 130, 246, 0.1);
+            color: var(--primary);
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-right: 12px;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+        }
+
+        .func-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 20px;
+            height: 100%;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .func-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--primary);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            background: #253045;
+        }
+
+        .func-name {
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+
+        .func-desc {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        /* --- Modal --- */
+        .modal-content {
+            background-color: #1e293b;
+            color: var(--text-main);
+            border-radius: 24px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 50px 100px -20px rgba(0,0,0,0.5);
+        }
+
+        .modal-header {
+            border-bottom: 1px solid var(--border-color);
+            background: rgba(15, 23, 42, 0.5);
+            padding: 20px 30px;
+        }
+        
+        .btn-close { filter: invert(1) grayscale(100%) brightness(200%); }
+
+        .modal-body { padding: 30px; }
+        
+        .label-text {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .label-badge {
+            font-size: 0.65rem;
+            background: #334155;
+            padding: 2px 8px;
+            border-radius: 4px;
+            color: #fff;
+        }
+
+        /* Syntax Box */
+        .syntax-box {
+            background: #0f172a;
+            color: var(--text-main);
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Consolas', monospace;
+            font-size: 0.9rem;
+            border: 1px solid var(--border-color);
+            margin-bottom: 25px;
+        }
+
+        /* Interactive Code Editor (Textarea) */
+        .code-editor {
+            background: #0d1117; /* GitHub Dark Dimmed */
+            color: #c9d1d9;
+            padding: 20px;
+            border-radius: 12px;
+            font-family: 'Consolas', 'Menlo', monospace;
+            font-size: 0.95rem;
+            border: 1px solid var(--primary);
+            width: 100%;
+            height: 300px;
+            resize: none;
+            outline: none;
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.1);
+            line-height: 1.5;
+        }
+
+        .code-editor:focus {
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+            border-color: #60a5fa;
+        }
+
+        /* Demo Stage */
+        .demo-stage {
+            background-color: #0f172a;
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+            background-size: 20px 20px;
+            overflow: hidden;
+        }
+
+        /* Target Elements */
+        .box {
+            width: 100px;
+            height: 100px;
+            background: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.1rem;
+            border-radius: 14px;
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
+            /* Important: Transition disabled so jQuery animation works */
+            transition: none !important; 
+            text-align: center;
+            cursor: pointer;
+        }
+
+        .list-group-item {
+            background-color: var(--bg-card);
+            color: var(--text-main);
+            border-color: var(--border-color);
+        }
+
+        .form-control {
+            background-color: var(--bg-dark);
+            border-color: var(--border-color);
+            color: white;
+        }
+        
+        .bg-purple { background: var(--accent) !important; box-shadow: 0 0 20px rgba(139, 92, 246, 0.4); }
+        .bg-green { background: #10b981 !important; }
+        .border-thick { border: 4px solid #f59e0b; box-shadow: 0 0 15px rgba(245, 158, 11, 0.4); }
+
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="container text-center">
+        <h2 class="fw-bold mb-1 text-white">jQuery Docs <span style="color:var(--primary)">Pro</span></h2>
+        <p class="text-muted small mb-3">Interactive Editor - Modify & Run Code Live</p>
+        <div class="search-wrapper">
+            <i class="fa-solid fa-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
+            <input type="text" id="searchInput" class="search-input" placeholder="Search functions (e.g. .animate, .on, .attr)...">
+        </div>
+    </div>
+</header>
+
+<div class="container" id="app">
+    <!-- Content Generated by JS -->
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="infoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <span class="badge bg-dark border border-secondary mb-2" id="mCat" style="color:var(--primary)">CATEGORY</span>
+                    <h3 class="modal-title fw-bold text-white" id="mTitle">Function</h3>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-5">
+                    <!-- Left: Code & Syntax -->
+                    <div class="col-lg-6 border-end border-secondary">
+                        <p class="text-muted mb-4 fs-5" id="mDesc">Description goes here.</p>
+
+                        <!-- 1. Basic Structure -->
+                        <span class="label-text">Syntax Structure</span>
+                        <div class="syntax-box" id="mSyntax"></div>
+
+                        <!-- 2. Editable Script -->
+                        <span class="label-text">
+                            Editable Code Playground 
+                            <span class="label-badge">EDIT ME</span>
+                        </span>
+                        <textarea class="code-editor" id="mCode" spellcheck="false"></textarea>
+                        <div class="text-end mt-1">
+                            <small class="text-muted"><i class="fa-solid fa-keyboard me-1"></i> You can modify this code</small>
+                        </div>
+                    </div>
+
+                    <!-- Right: Live Demo -->
+                    <div class="col-lg-6 d-flex flex-column">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="label-text mb-0" style="color:var(--primary)">Live Preview</span>
+                            <button class="btn btn-sm btn-outline-secondary" id="btnReset">
+                                <i class="fa-solid fa-rotate-left me-1"></i> Reset Demo
+                            </button>
+                        </div>
+                        
+                        <div class="demo-stage" id="stage">
+                            <!-- Dynamic Elements -->
+                        </div>
+
+                        <div class="alert alert-dark mt-3 py-2 small border-secondary text-muted">
+                            <i class="fa-solid fa-info-circle me-1"></i> Target elements use classes: <code>.box</code>, <code>.list-group</code>, <code>input</code>
+                        </div>
+
+                        <button id="btnRun" class="btn btn-primary w-100 mt-2 py-3 rounded-pill fw-bold shadow-lg hover-scale">
+                            <i class="fa-solid fa-play me-2"></i> Run Code
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function() {
+
+        // --- 1. DATA LIBRARY ---
+        // Includes: id, category, name, description, syntax, full code string (EDITABLE), setup function
+        const library = [
+            // === EFFECTS ===
+            {
+                id: 'hide', cat: 'Effects', name: '.hide()',
+                desc: 'Hides the matched elements immediately.',
+                syntax: '$(selector).hide(speed)',
+                fullCode: `// Click Run to hide the box\n$(".box").hide(1000);`,
+                setup: () => $("#target").show().css('opacity', 1)
+            },
+            {
+                id: 'show', cat: 'Effects', name: '.show()',
+                desc: 'Displays the matched elements.',
+                syntax: '$(selector).show(speed)',
+                fullCode: `// The box starts hidden. Click Run to show it.\n$(".box").show(1000);`,
+                setup: () => $("#target").hide()
+            },
+            {
+                id: 'toggle', cat: 'Effects', name: '.toggle()',
+                desc: 'Display or hide the matched elements (switches state).',
+                syntax: '$(selector).toggle(speed)',
+                fullCode: `// Toggles visibility each time you click Run\n$(".box").toggle("slow");`,
+                setup: () => $("#target").show()
+            },
+            {
+                id: 'fadeIn', cat: 'Effects', name: '.fadeIn()',
+                desc: 'Display the matched elements by fading them to opaque.',
+                syntax: '$(selector).fadeIn(speed)',
+                fullCode: `// Fades in the hidden box\n$(".box").fadeIn(2000);`,
+                setup: () => $("#target").hide()
+            },
+            {
+                id: 'fadeOut', cat: 'Effects', name: '.fadeOut()',
+                desc: 'Hide the matched elements by fading them to transparent.',
+                syntax: '$(selector).fadeOut(speed)',
+                fullCode: `// Fades out the visible box\n$(".box").fadeOut(2000);`,
+                setup: () => $("#target").show().css('opacity', 1)
+            },
+            {
+                id: 'slideUp', cat: 'Effects', name: '.slideUp()',
+                desc: 'Hide the matched elements with a sliding motion.',
+                syntax: '$(selector).slideUp(speed)',
+                fullCode: `// Slides the box up (hides it)\n$(".box").slideUp();`,
+                setup: () => $("#target").show()
+            },
+            {
+                id: 'slideDown', cat: 'Effects', name: '.slideDown()',
+                desc: 'Display the matched elements with a sliding motion.',
+                syntax: '$(selector).slideDown(speed)',
+                fullCode: `// Slides the box down (shows it)\n$(".box").slideDown("slow");`,
+                setup: () => $("#target").hide()
+            },
+            {
+                id: 'animate', cat: 'Effects', name: '.animate()',
+                desc: 'Perform a custom animation of a set of CSS properties.',
+                syntax: '$(selector).animate({params}, speed)',
+                fullCode: `// Custom Animation\n$(".box").animate({\n  width: "250px",\n  opacity: 0.5,\n  marginLeft: "50px"\n}, 1000);`,
+                setup: () => $("#target").css({width:'100px', opacity:1, marginLeft:0})
+            },
+            {
+                id: 'stop', cat: 'Effects', name: '.stop()',
+                desc: 'Stops the currently running animation on the matched elements.',
+                syntax: '$(selector).stop(stopAll, goToEnd)',
+                fullCode: `// 1. Starts a long animation\n$(".box").slideUp(5000);\n\n// 2. Stops it after 1 second\nsetTimeout(function(){\n  $(".box").stop();\n  alert("Stopped!");\n}, 1000);`,
+                setup: () => $("#target").show().css('height','100px')
+            },
+
+            // === EVENTS ===
+            {
+                id: 'click', cat: 'Events', name: '.click()',
+                desc: 'Bind an event handler to the "click" JavaScript event.',
+                syntax: '$(selector).click(function)',
+                fullCode: `// Adds a click listener.\n// After clicking Run, CLICK THE BOX in the preview.\n\n$(".box").click(function(){\n  alert("You clicked the box!");\n  $(this).css("background", "red");\n});`,
+                setup: () => $("#target").off().text("Click Me").css("background", "")
+            },
+            {
+                id: 'dblclick', cat: 'Events', name: '.dblclick()',
+                desc: 'Bind an event handler to the "dblclick" JavaScript event.',
+                syntax: '$(selector).dblclick(function)',
+                fullCode: `// Adds a double-click listener.\n// After clicking Run, DOUBLE CLICK the box.\n\n$(".box").dblclick(function(){\n  $(this).css("background", "#8b5cf6");\n  $(this).text("Double Clicked!");\n});`,
+                setup: () => $("#target").off().css("background","").text("Dbl Click")
+            },
+
+            // === MANIPULATION ===
+            {
+                id: 'append', cat: 'Manipulation', name: '.append()',
+                desc: 'Insert content, specified by the parameter, to the end of each element.',
+                syntax: '$(selector).append(content)',
+                fullCode: `// Appends a new item to the list\n$(".list-group").append("<li class='list-group-item bg-primary text-white'>New Item</li>");`,
+                type: 'list',
+                setup: () => $("#targetList").find(".bg-primary").remove()
+            },
+            {
+                id: 'prepend', cat: 'Manipulation', name: '.prepend()',
+                desc: 'Insert content, specified by the parameter, to the beginning of each element.',
+                syntax: '$(selector).prepend(content)',
+                fullCode: `// Prepends a new item to the list\n$(".list-group").prepend("<li class='list-group-item bg-success text-white'>First Item</li>");`,
+                type: 'list',
+                setup: () => $("#targetList").find(".bg-success").remove()
+            },
+            {
+                id: 'after', cat: 'Manipulation', name: '.after()',
+                desc: 'Insert content, specified by the parameter, after each element in the set of matched elements.',
+                syntax: '$(selector).after(content)',
+                fullCode: `// Inserts a purple box AFTER the blue one\n$(".box").after("<div class='box bg-purple' style='margin-left:10px'>After</div>");`,
+                setup: () => $(".bg-purple").remove()
+            },
+            {
+                id: 'before', cat: 'Manipulation', name: '.before()',
+                desc: 'Insert content, specified by the parameter, before each element in the set of matched elements.',
+                syntax: '$(selector).before(content)',
+                fullCode: `// Inserts a purple box BEFORE the blue one\n$(".box").before("<div class='box bg-purple' style='margin-right:10px'>Before</div>");`,
+                setup: () => $(".bg-purple").remove()
+            },
+            {
+                id: 'html', cat: 'Manipulation', name: '.html()',
+                desc: 'Get the HTML contents or set the HTML contents.',
+                syntax: '$(selector).html(content)',
+                fullCode: `// Replaces the content of the box\n$(".box").html("<h3>New HTML</h3>");`,
+                setup: () => $("#target").text("Box")
+            },
+            {
+                id: 'text', cat: 'Manipulation', name: '.text()',
+                desc: 'Get the combined text contents or set the text contents.',
+                syntax: '$(selector).text(content)',
+                fullCode: `// Changes the text of the box\n$(".box").text("Just Text");`,
+                setup: () => $("#target").text("Box")
+            },
+            {
+                id: 'clone', cat: 'Manipulation', name: '.clone()',
+                desc: 'Create a deep copy of the set of matched elements.',
+                syntax: '$(selector).clone()',
+                fullCode: `// Clones the box and appends it to the stage\n$(".box").clone().css("opacity", 0.5).appendTo("#stage");`,
+                setup: () => $(".cloned-item").remove()
+            },
+            {
+                id: 'empty', cat: 'Manipulation', name: '.empty()',
+                desc: 'Remove all child nodes of the set of matched elements.',
+                syntax: '$(selector).empty()',
+                fullCode: `// Removes all items from the list\n$(".list-group").empty();`,
+                type: 'list',
+                setup: () => {} // handled by reset
+            },
+            {
+                id: 'remove', cat: 'Manipulation', name: '.remove()',
+                desc: 'Removes the set of matched elements from the DOM.',
+                syntax: '$(selector).remove()',
+                fullCode: `// Removes the box entirely\n$(".box").remove();`,
+                setup: () => {}
+            },
+
+            // === CSS & ATTR ===
+            {
+                id: 'addClass', cat: 'CSS', name: '.addClass()',
+                desc: 'Adds the specified class(es) to each element.',
+                syntax: '$(selector).addClass(classname)',
+                fullCode: `// Adds a thick border class\n$(".box").addClass("border-thick");`,
+                setup: () => $("#target").removeClass("border-thick")
+            },
+            {
+                id: 'removeClass', cat: 'CSS', name: '.removeClass()',
+                desc: 'Remove a single class, multiple classes, or all classes from each element.',
+                syntax: '$(selector).removeClass(className)',
+                fullCode: `// Removes the border class\n$(".box").removeClass("border-thick");`,
+                setup: () => $("#target").addClass("border-thick")
+            },
+            {
+                id: 'toggleClass', cat: 'CSS', name: '.toggleClass()',
+                desc: 'Add or remove one or more classes from each element in the set of matched elements.',
+                syntax: '$(selector).toggleClass(className)',
+                fullCode: `// Toggles the thick border on and off\n$(".box").toggleClass("border-thick");`,
+                setup: () => $("#target").removeClass("border-thick")
+            },
+            {
+                id: 'css', cat: 'CSS', name: '.css()',
+                desc: 'Get the value of a computed style property or set one or more CSS properties.',
+                syntax: '$(selector).css(property, value)',
+                fullCode: `// Changes background color\n$(".box").css("background", "#333");`,
+                setup: () => $("#target").css("background", "")
+            },
+            {
+                id: 'attr', cat: 'CSS', name: '.attr()',
+                desc: 'Get the value of an attribute or set one or more attributes.',
+                syntax: '$(selector).attr(attribute, value)',
+                fullCode: `// Changes the input type to Checkbox\n$("input").attr("type", "checkbox");`,
+                type: 'input',
+                setup: () => $("#targetInput").attr("type", "text")
+            },
+            {
+                id: 'val', cat: 'CSS', name: '.val()',
+                desc: 'Get the current value of the first element or set the value.',
+                syntax: '$(selector).val(value)',
+                fullCode: `// Sets the value of the input\n$("input").val("Hello World");`,
+                type: 'input',
+                setup: () => $("#targetInput").val("Old Value")
+            }
+        ];
+
+        // --- 2. RENDER ENGINE ---
+        const $app = $("#app");
+        const modal = new bootstrap.Modal(document.getElementById('infoModal'));
+        let activeItem = null;
+
+        function renderGrid(filter = "") {
+            $app.empty();
+            const cats = [...new Set(library.map(i => i.cat))];
+
+            cats.forEach(cat => {
+                const items = library.filter(i => 
+                    i.cat === cat && 
+                    (i.name.toLowerCase().includes(filter) || i.desc.toLowerCase().includes(filter))
+                );
+
+                if (items.length === 0) return;
+
+                const section = $(`<div class="mb-5">
+                    <h4 class="cat-title"><span class="cat-badge">${cat}</span> Functions</h4>
+                    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4" id="cat-${cat}"></div>
+                </div>`);
+
+                items.forEach(item => {
+                    const card = $(`
+                        <div class="col">
+                            <div class="func-card" data-id="${item.id}">
+                                <div class="func-name">${item.name}</div>
+                                <div class="func-desc">${item.desc}</div>
+                            </div>
+                        </div>
+                    `);
+                    section.find(`#cat-${cat}`).append(card);
+                });
+                $app.append(section);
+            });
+        }
+
+        // --- 3. INTERACTION ---
+        $(document).on("click", ".func-card", function() {
+            const id = $(this).data("id");
+            activeItem = library.find(i => i.id === id);
+            
+            $("#mTitle").text(activeItem.name);
+            $("#mCat").text(activeItem.cat);
+            $("#mDesc").text(activeItem.desc);
+            $("#mSyntax").text(activeItem.syntax);
+
+            // Set Editable Code
+            $("#mCode").val(activeItem.fullCode);
+
+            resetDemo();
+            modal.show();
+        });
+
+        function resetDemo() {
+            const stage = $("#stage");
+            stage.empty();
+
+            // Create fresh elements based on type
+            if (activeItem.type === 'list') {
+                stage.html(`<ul id="targetList" class="list-group w-50 shadow-sm"><li class="list-group-item">Item 1</li><li class="list-group-item">Item 2</li></ul>`);
+            } else if (activeItem.type === 'input') {
+                stage.html(`<input type="text" id="targetInput" class="form-control w-50 shadow-sm" value="Old Value">`);
+            } else {
+                stage.html(`<div id="target" class="box">Box</div>`);
+            }
+
+            // Execute specific setup
+            if (activeItem.setup) activeItem.setup();
+        }
+
+        // Run Button - Executes the text from the textarea
+        $("#btnRun").click(function() {
+            const userCode = $("#mCode").val();
+            
+            try {
+                // We create a new function to safely execute the string
+                // Note: In a real app, eval/new Function is risky with user input.
+                // For a client-side sandbox, this is standard.
+                const func = new Function(userCode);
+                func();
+                
+                // Visual feedback
+                const originalText = $(this).html();
+                $(this).html('<i class="fa-solid fa-check me-2"></i> Executed').removeClass("btn-primary").addClass("btn-success");
+                setTimeout(() => {
+                    $(this).html(originalText).addClass("btn-primary").removeClass("btn-success");
+                }, 1000);
+
+            } catch (err) {
+                alert("Error in your code:\n" + err.message);
+            }
+        });
+
+        $("#btnReset").click(resetDemo);
+
+        $("#searchInput").on("keyup", function() {
+            renderGrid($(this).val().toLowerCase());
+        });
+
+        renderGrid();
+    });
+</script>
+</body>
+</html>
